@@ -1,0 +1,37 @@
+name: CI - NeriCare API
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (Node.js)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Gerar Prisma Client
+        run: npx prisma generate --schema prisma/schema.prisma
+
+      - name: Executar compilação (Build)
+        run: npm run build
+
+      - name: Executar testes automatizados
+        run: npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: ci-secret-key-nericare-tests-only
