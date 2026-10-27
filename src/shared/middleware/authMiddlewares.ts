@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { jwtConfig } from "../../config/jwt.js";
-import type { AuthenticatedUser } from "../../features/auth/types/auth.types.js";
+import type { AuthenticatedUser } from "../types/authenticatedUser.js";
 
 export async function authMiddleware(
   req: Request,
@@ -16,7 +16,8 @@ export async function authMiddleware(
   try {
     const decoded = jwt.verify(token, jwtConfig.secret) as any; // <- usar any aqui
     req.user = {
-      id: decoded.id.toString(), // garantir que seja string
+      id: Number(decoded.id),
+      nome: decoded.nome ?? "",
       email: decoded.email,
       role: decoded.role,
     } as AuthenticatedUser;
