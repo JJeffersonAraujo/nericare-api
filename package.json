@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "test": "node --test src/features/**/__tests__/*.test.ts",
+    "test": "node --import tsx --test src/**/__tests__/*.test.ts",
     "db:migrate": "dotenv prisma migrate dev",
     "db:studio": "dotenv prisma studio",
     "tsoa:spec": "tsoa spec",
