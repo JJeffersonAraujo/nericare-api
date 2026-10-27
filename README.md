@@ -1,255 +1,184 @@
-# BACKEND API – PROJETO NERICARE
-======================================================================
+# NeriCare API — Sistema de Gestão de Escalas e Jornadas Hospitalares
 
-## 1. VISÃO GERAL
-----------------------------------------------------------------------
-O projeto NERICARE é uma API backend desenvolvida com foco corporativo,
-priorizando padronização, escalabilidade, segurança, tipagem forte e
-documentação automática.
+[![Node.js Version](https://img.shields.io/badge/Node.js-24.x%20LTS-green.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Database](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![ORM](https://img.shields.io/badge/Prisma-6.x-teal.svg)](https://www.prisma.io/)
+[![Documentation](https://img.shields.io/badge/OpenAPI-Swagger%203.0-brightgreen.svg)](https://swagger.io/)
+[![Tests](https://img.shields.io/badge/Tests-8%20Passed-success.svg)](https://nodejs.org/api/test.html)
 
-A aplicação foi construída seguindo boas práticas modernas de mercado,
-com arquitetura orientada a features (Feature-Driven Architecture),
-visando fácil manutenção, evolução contínua e integração com times
-multidisciplinares.
+API RESTful corporativa desenvolvida para gestão de escalas médicas, plantões hospitalares e apuração automatizada de jornadas de trabalho em serviços de saúde.
 
-----------------------------------------------------------------------
+---
+
+## 1. PROBLEMA DE NEGÓCIO E OBJETIVO
+
+No ambiente hospitalar e clínico, a gestão de escalas de profissionais de saúde (médicos, enfermeiros e técnicos) é um desafio de alta complexidade:
+- **Jornadas Atípicas:** Plantões de 12h ou 24h que frequentemente cruzam a meia-noite.
+- **Adicional Noturno:** Exigência de cômputo preciso de minutos trabalhados na faixa legal (22h às 05h).
+- **Controle de Atrasos e Horas Extras:** Necessidade de comparar horários planejados versus efetivamente executados.
+- **Rastreabilidade e Conformidade:** Identificação de registros profissionais em conselhos de classe (CRM, COREN) e controle de acesso estrito a dados sensíveis.
+
+O objetivo da **NeriCare API** é oferecer uma camada de backend resiliente, fortemente tipada e auditável para automatizar o cadastro de escalas, a alocação de profissionais e a liquidação das jornadas de trabalho.
+
+---
 
 ## 2. STACK TECNOLÓGICA
-----------------------------------------------------------------------
 
-BACKEND
-- Node.js 24.12.0 (LTS)
-- Express.js ^4.18
-- TypeScript ^5.3
-- TSOA (controllers tipados + geração automática de rotas e Swagger)
+* **Runtime & Linguagem:** Node.js 24 LTS e TypeScript 5.
+* **Framework Web:** Express.js 4.
+* **Camada de Documentação e Rotas:** TSOA (TypeScript OpenAPI Annotation) gerando especificação OpenAPI 3 e Swagger UI.
+* **Banco de Dados & ORM:** PostgreSQL 15 e Prisma ORM 6.
+* **Autenticação & Segurança:** JWT (JSON Web Tokens), bcryptjs (hash criptográfico de senhas), Helmet e CORS.
+* **Validação:** Zod para variáveis de ambiente e DTOs tipados.
+* **Infraestrutura Local:** Docker e Docker Compose (PostgreSQL 15 Alpine + PgAdmin 4).
+* **Suíte de Testes:** Node.js Native Test Runner (`node:test` e `node:assert/strict`) integrado a TypeScript.
 
-BANCO DE DADOS
-- PostgreSQL 15+
-- Prisma ORM ^6.x
-- Docker e Docker Compose (ambiente local)
-- Banco remoto para homologação/produção
+---
 
-AUTENTICAÇÃO, VALIDAÇÃO E DOCUMENTAÇÃO
-- JWT (jsonwebtoken v8)
-- Access Token + Refresh Token
-- Swagger OpenAPI 3 (gerado via TSOA)
-- Zod (validação de variáveis de ambiente)
+## 3. ARQUITETURA DE SOFTWARE
 
-----------------------------------------------------------------------
+O projeto adota o padrão **Feature-Driven Architecture** (Arquitetura Orientada a Funcionalidades/Domínios). Cada módulo agrupa sua própria responsabilidade de negócio:
 
-## 3. ARQUITETURA DO PROJETO
-----------------------------------------------------------------------
-
-Padrão adotado:
-- Feature-Driven Architecture
-
-Principais conceitos aplicados:
-- Organização por domínio (features)
-- Controllers enxutos (sem regra de negócio)
-- Services responsáveis pelas regras de negócio
-- Repositórios isolando acesso a dados
-- Tipagem forte ponta a ponta (TS + Prisma + TSOA)
-- Soft delete (deletedAt)
-- Auditoria automática (createdAt, updatedAt)
-- Enums para regras de negócio (roles)
-- Separação clara entre bootstrap, config e domínio
-
-----------------------------------------------------------------------
-
-## 4. ESTRUTURA DE PASTAS (RESUMO)
-----------------------------------------------------------------------
-
+```text
 src/
-├── app.ts                     -> Configuração do Express
-├── index.ts                   -> Bootstrap da aplicação
-├── routes/                    -> Rotas geradas automaticamente (TSOA)
-├── features/                  -> Domínios da aplicação
-│   └── auth/
+├── features/                     # Domínios de negócio
+│   ├── auth/                     # Autenticação, emissão e validação de tokens JWT
+│   │   ├── controllers/
+│   │   ├── dtos/
+│   │   ├── middleware/
+│   │   ├── repositories/
+│   │   ├── routes/
+│   │   └── services/
+│   ├── cadastro/                 # Cadastro e gerenciamento de perfis profissionais
+│   │   ├── controllers/
+│   │   ├── dtos/
+│   │   ├── repositories/
+│   │   ├── routes/
+│   │   └── services/
+│   ├── jornada/                  # Regras de cálculo de escalas, plantões e horas
+│   │   ├── __tests__/            # Suíte de testes automatizados das regras
+│   │   ├── controllers/
+│   │   ├── dtos/
+│   │   ├── repositories/
+│   │   ├── rules/                # Funções puras de cálculo matemático de jornada
+│   │   └── services/
+│   └── user/                     # Gestão de usuários da plataforma
 │       ├── controllers/
-│       ├── services/
-│       └── dtos/
-├── shared/                    -> Código compartilhado
-│   ├── database/
-│   ├── middleware/
-│   │   └── ensureAuth.ts
-│   ├── utils/
-│   │   └── jwtUtils.ts
-│   └── types/
-├── config/
-│   ├── env.ts
-│   └── swagger/
+│       ├── dtos/
+│       ├── repositories/
+│       └── services/
+├── shared/                       # Código compartilhado entre domínios
+│   ├── constants/                # Códigos de erro HTTP e mensagens padrão
+│   ├── database/                 # Instância singleton do PrismaClient
+│   ├── decorators/               # Decoradores (ex: @LogExecution)
+│   ├── middleware/               # Middlewares globais (errorHandler, rateLimiter)
+│   └── utils/                    # Formatadores e validadores utilitários
+├── config/                       # Configurações de ambiente, CORS, JWT e Swagger
+├── app.ts                        # Configuração dos middlewares do Express
+└── index.ts                      # Bootstrap e inicialização do servidor
+```
 
-OBSERVAÇÕES IMPORTANTES:
-- O arquivo routes.ts é gerado automaticamente pelo TSOA
-- Nunca editar arquivos gerados manualmente
-- Autenticação do Swagger utiliza expressAuthentication
+---
 
-----------------------------------------------------------------------
+## 4. MODELO DE DADOS (PRISMA SCHEMA)
 
-## 5. PRÉ-REQUISITOS
-----------------------------------------------------------------------
+As entidades centrais refletem o fluxo operacional hospitalar:
 
-- Node.js 24.12.0 (LTS)
-- npm
-- Docker
-- Docker Compose
+* `Usuario`: Registro de autenticação com enums de perfil (`Role: ADMIN, GESTOR, PROFISSIONAL, USER`), integridade de dados e auditoria (`createdAt`, `updatedAt`, `deletedAt`).
+* `AuthSessao`: Controle de tokens de sessão ativas associadas a cada usuário.
+* `TipoProfissional`: Categorias profissionais (ex: Médico Plantonista, Enfermeiro Chefe).
+* `Profissional`: Dados cadastrais vinculados ao usuário, incluindo Conselho de Classe e Número de Registro.
+* `Escala` & `Plantao`: Planejamento temporal de início e término das coberturas médicas.
+* `JornadaExecutada`: Registro pontual dos horários reais de entrada e saída.
+* `JornadaCalculada`: Totalizador consolidado contendo:
+  - `minutosTrabalhados`
+  - `minutosAtraso`
+  - `minutosExtras`
+  - `minutosNoturnos`
 
-----------------------------------------------------------------------
+---
 
-## 6. CONFIGURAÇÃO DO AMBIENTE
-----------------------------------------------------------------------
+## 5. REGRAS DE CÁLCULO DE JORNADA
 
-6.1 Clonar o repositório
+As regras implementadas em `src/features/jornada/rules/jornada.rules.ts` seguem as seguintes diretrizes:
 
-git clone <url-do-repositorio>
-cd neri-project
+1. **Minutos Trabalhados:** $\text{Diferença}(FimExecutado - InicioExecutado)$ em minutos.
+2. **Atraso:** $\max(0, InicioExecutado - InicioPlanejado)$ em minutos. Não pontua valores negativos para chegadas adiantadas.
+3. **Horas Extras:** $\max(0, FimExecutado - FimPlanejado)$ em minutos.
+4. **Adicional Noturno:** Varredura minuto a minuto identificando horários entre as 22h00 e as 05h00, considerando inclusive plantões de 12h ou 24h que cruzam a virada do dia.
 
-----------------------------------------------------------------------
+---
 
-6.2 Instalar dependências
+## 6. INSTALAÇÃO E CONFIGURAÇÃO LOCAL
 
-npm install
+### Pré-requisitos
+* Node.js 22+ ou 24+ LTS
+* Docker e Docker Compose
+* Git
 
-----------------------------------------------------------------------
+### Passo a Passo
 
-6.3 Variáveis de ambiente
+1. **Clonar o Repositório:**
+   ```bash
+   git clone https://github.com/JJeffersonAraujo/nericare-api.git
+   cd nericare-api
+   ```
 
-Criar um arquivo .env na raiz do projeto:
+2. **Configurar as Variáveis de Ambiente:**
+   Copie o arquivo de exemplo:
+   ```bash
+   cp .env.example .env
+   ```
+   *Assegure-se de manter credenciais seguras e não versionar o `.env`.*
 
-DATABASE_URL="postgresql://developer:dev_password_123@localhost:5432/project_db"
+3. **Subir o Banco de Dados com Docker:**
+   ```bash
+   docker-compose up -d
+   ```
+   *Isso iniciará o PostgreSQL na porta `5432` e o PgAdmin na porta `5050`.*
 
-# JWT
-JWT_ACCESS_SECRET="access_secret_super_seguro"
-JWT_REFRESH_SECRET="refresh_secret_super_seguro"
+4. **Executar as Migrations do Banco:**
+   ```bash
+   npx prisma migrate dev
+   ```
 
-# Server
-PORT=3000
-NODE_ENV=development
+5. **Iniciar a Aplicação em Desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
+   A API estará disponível em: `http://localhost:3000`  
+   A documentação Swagger interativa estará em: `http://localhost:3000/docs`
 
-OBSERVAÇÕES:
-- Access Token e Refresh Token utilizam SEGREDOS DIFERENTES
-- Nunca versionar o arquivo .env
-- Nunca reutilizar secrets em produção
+---
 
-----------------------------------------------------------------------
+## 7. SUÍTE DE TESTES AUTOMATIZADOS
 
-6.4 Subir banco local (opcional)
+A aplicação conta com testes automatizados executáveis com o test runner nativo do Node.js:
 
-docker compose up -d
+```bash
+npm test
+```
 
-----------------------------------------------------------------------
+### Casos de Teste Validados:
+* [x] Cálculo exato de minutos trabalhados em jornada padrão diurna (9h = 540 min).
+* [x] Identificação de atraso de início de plantão.
+* [x] Garantia de atraso zerado em entradas pontuais ou adiantadas.
+* [x] Cálculo de horas extras no encerramento tardio do plantão.
+* [x] Garantia de horas extras zeradas em saídas antes do planejado.
+* [x] Identificação correta de minutos noturnos entre 22h e 05h.
+* [x] Garantia de zero minutos noturnos em jornadas estritamente diurnas.
+* [x] Cálculo exato de adicionais noturnos em plantão de 12h que cruza a madrugada (19h às 07h).
 
-6.5 Prisma
+---
 
-npx prisma validate
-npx prisma migrate dev
-npx prisma generate
+## 8. LIMITAÇÕES CONHECIDAS E ROADMAP
 
-----------------------------------------------------------------------
+### Limitações Atuais:
+- As rotas TSOA são geradas durante a compilação e exigem execução prévia de `npm run tsoa:routes` para sincronização de novos endpoints.
+- O cálculo de adicional noturno atual realiza iteração contínua de minutos; para grandes volumes de reprocessamento em lote, uma abordagem puramente matemática por intervalos proporcionará ganho de performance.
 
-## 7. SWAGGER E ROTAS (TSOA)
-----------------------------------------------------------------------
-
-Gerar documentação e rotas automaticamente:
-
-npx tsoa spec
-npx tsoa routes
-
-Executar sempre que:
-- Controllers forem alterados
-- DTOs forem modificados
-- Autenticação ou security mudar
-
-----------------------------------------------------------------------
-
-## 8. EXECUÇÃO DA APLICAÇÃO
-----------------------------------------------------------------------
-
-Ambiente de desenvolvimento:
-
-npm run dev
-
-Endereços disponíveis:
-- API: http://localhost:3000
-- Health Check: http://localhost:3000/health
-- Swagger UI: http://localhost:3000/docs
-
-----------------------------------------------------------------------
-
-## 9. AUTENTICAÇÃO E SEGURANÇA
-----------------------------------------------------------------------
-
-A API utiliza autenticação JWT no padrão Bearer Token.
-
-Fluxo de autenticação:
-1. Login em /api/auth/login
-2. Recebe accessToken e refreshToken
-3. Enviar accessToken no header:
-
-Authorization: Bearer <access_token>
-
-Características:
-- Access Token com curta duração
-- Refresh Token com duração maior
-- Tokens assinados com jsonwebtoken v8
-- Payload mínimo (id, email, role)
-- Tokens verificados via JwtUtils
-- Swagger protegido via expressAuthentication
-
-----------------------------------------------------------------------
-
-## 10. Testes e Qualidade
-----------------------------------------------------------------------
-
-Atualmente, a API é validada manualmente por meio do Swagger UI
-e Postman, cobrindo os principais fluxos funcionais e de segurança.
-
-### Cenários validados
-
-- Login com credenciais válidas e inválidas
-- Acesso a endpoints protegidos sem autenticação
-- Acesso com token inválido ou expirado
-- Renovação de sessão com Refresh Token
-- Logout e revogação de sessão
-- Cadastro e validação de usuários
-- Regras de cálculo de jornada
-
-### Evolução planejada
-
-A suíte automatizada será implementada em duas camadas:
-
-- **Testes unitários:** regras de negócio e services
-- **Testes de integração:** controllers, autenticação e endpoints REST
-
-Ferramentas previstas:
-- Vitest ou Jest
-- Supertest
-
-----------------------------------------------------------------------
-
-## 11. BOAS PRÁTICAS ADOTADAS
-----------------------------------------------------------------------
-
-- Tipagem forte
-- Separação de responsabilidades
-- Arquitetura orientada a domínio
-- Soft delete
-- Auditoria automática
-- JWT seguro (access + refresh)
-- Documentação automática
-- Código preparado para CI/CD e testes
-
-----------------------------------------------------------------------
-
-## 12. PRÓXIMOS PASSOS
-----------------------------------------------------------------------
-
-- Testes automatizados (unitários e integração)
-- Rate limit no login
-- Logs estruturados
-- Observabilidade
-- Pipeline CI/CD
-- Deploy em cloud
-
-### Aplicação disponível em
-http://localhost:3000
+### Próximas Entregas (Roadmap):
+- [ ] Implementação de testes de integração E2E com Supertest para as rotas de autenticação e login.
+- [ ] Configuração de pipeline de CI/CD via GitHub Actions para execução de testes e build a cada pull request.
+- [ ] Exportação de espelhos de ponto de plantões em formato PDF/CSV para faturamento hospitalar.

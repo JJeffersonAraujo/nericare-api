@@ -1,4 +1,4 @@
-import type { AuthenticatedUser } from "@/features/auth/types/auth.types.js";
+import type { AuthenticatedUser } from "./authenticatedUser.js";
 import type { Request } from "express";
 
 declare module "express" {
